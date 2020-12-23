@@ -53,14 +53,33 @@ class World {
     }
 
     connectHouseholdToHousehold(household1, household2) {
-        household2.powerPlantsConnected = household1.powerPlantsConnected
-        return household2
+        household1.householdsConnected.push(household2)
+        // console.log(household1)
+        if (household2.powerPlantsConnected.length > 0){
+            household1.powerPlantsConnected = household2.powerPlantsConnected
+            return household1
+        }else {
+            household2.powerPlantsConnected = household1.powerPlantsConnected
+            return household2
+        }
+        // return household2
 
         throw new Error("Not Implemented");
     }
 
     disconnectHouseholdFromPowerPlant(household, powerPlant) {
         household.powerPlantsConnected = household.powerPlantsConnected.filter(el => el.id != powerPlant.id)
+        deepDisconnect(household.householdsConnected)
+
+        function deepDisconnect(el) {
+            el.map(el => {
+                el.powerPlantsConnected = household.powerPlantsConnected
+                if (el.householdsConnected.length) {
+                    deepDisconnect(el.householdsConnected)
+                }
+            })
+        }
+
         return household
         throw new Error("Not Implemented");
     }
@@ -68,7 +87,6 @@ class World {
     killPowerPlant(powerPlant) {
         powerPlant.isActive = false;
         this.houseHold.powerPlantsConnected = this.houseHold.powerPlantsConnected.filter(el => el != powerPlant.id)
-
         return this.houseHold
         throw new Error("Not Implemented");
     }
@@ -139,27 +157,27 @@ describe("Households + Power Plants", function () {
     });
 
     it("Household will have Electricity as long as there's at least 1 alive Power Plant connected", () => {
-    const world = new World();
-    const household = world.createHousehold();
+        const world = new World();
+        const household = world.createHousehold();
 
-    const powerPlant1 = world.createPowerPlant();
-    const powerPlant2 = world.createPowerPlant();
-    const powerPlant3 = world.createPowerPlant();
+        const powerPlant1 = world.createPowerPlant();
+        const powerPlant2 = world.createPowerPlant();
+        const powerPlant3 = world.createPowerPlant();
 
-    world.connectHouseholdToPowerPlant(household, powerPlant1);
-    world.connectHouseholdToPowerPlant(household, powerPlant2);
-    world.connectHouseholdToPowerPlant(household, powerPlant3);
+        world.connectHouseholdToPowerPlant(household, powerPlant1);
+        world.connectHouseholdToPowerPlant(household, powerPlant2);
+        world.connectHouseholdToPowerPlant(household, powerPlant3);
 
-    assert.equal(world.householdHasEletricity(household), true);
+        assert.equal(world.householdHasEletricity(household), true);
 
-    world.disconnectHouseholdFromPowerPlant(household, powerPlant1);
-    assert.equal(world.householdHasEletricity(household), true);
+        world.disconnectHouseholdFromPowerPlant(household, powerPlant1);
+        assert.equal(world.householdHasEletricity(household), true);
 
-    world.killPowerPlant(powerPlant2);
-    assert.equal(world.householdHasEletricity(household), true);
+        world.killPowerPlant(powerPlant2);
+        assert.equal(world.householdHasEletricity(household), true);
 
-    world.disconnectHouseholdFromPowerPlant(household, powerPlant3);
-    assert.equal(world.householdHasEletricity(household), false);
+        world.disconnectHouseholdFromPowerPlant(household, powerPlant3);
+        assert.equal(world.householdHasEletricity(household), false);
     });
 
     it("Household won't have Electricity if the only Power Plant dies", () => {
@@ -317,9 +335,8 @@ describe("Households + Households + Power Plants", function () {
 
         world.disconnectHouseholdFromPowerPlant(household1, powerPlant);
         assert.equal(world.householdHasEletricity(household1), false);
-        // --- need to find solution ---
-        // assert.equal(world.householdHasEletricity(household2), false);
-        // assert.equal(world.householdHasEletricity(household3), false);
+        assert.equal(world.householdHasEletricity(household2), false);
+        assert.equal(world.householdHasEletricity(household3), false);
     });
 
     it("2 Households + 2 Power Plants", () => {
@@ -333,25 +350,23 @@ describe("Households + Households + Power Plants", function () {
 
         world.connectHouseholdToPowerPlant(household1, powerPlant1);
         world.connectHouseholdToPowerPlant(household2, powerPlant2);
-
         assert.equal(world.householdHasEletricity(household1), true);
         assert.equal(world.householdHasEletricity(household2), true);
 
         world.killPowerPlant(powerPlant1);
-
         assert.equal(world.householdHasEletricity(household1), false);
         assert.equal(world.householdHasEletricity(household2), true);
 
+        console.log(household1)
         // --- need to find solution ---
-        // world.connectHouseholdToHousehold(household1, household2);
-        //
-        // assert.equal(world.householdHasEletricity(household1), true);
-        // assert.equal(world.householdHasEletricity(household2), true);
-        //
-        // world.disconnectHouseholdFromPowerPlant(household2, powerPlant2);
-        //
-        // assert.equal(world.householdHasEletricity(household1), false);
-        // assert.equal(world.householdHasEletricity(household2), false);
+        world.connectHouseholdToHousehold(household1, household2);
+        assert.equal(world.householdHasEletricity(household1), true);
+        assert.equal(world.householdHasEletricity(household2), true);
+        // --- need to find solution ---
+
+        world.disconnectHouseholdFromPowerPlant(household2, powerPlant2);
+        assert.equal(world.householdHasEletricity(household1), false);
+        assert.equal(world.householdHasEletricity(household2), false);
     });
 });
 

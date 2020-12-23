@@ -21261,8 +21261,17 @@ var World = /*#__PURE__*/function () {
   }, {
     key: "connectHouseholdToHousehold",
     value: function connectHouseholdToHousehold(household1, household2) {
-      household2.powerPlantsConnected = household1.powerPlantsConnected;
-      return household2;
+      household1.householdsConnected.push(household2); // console.log(household1)
+
+      if (household2.powerPlantsConnected.length > 0) {
+        household1.powerPlantsConnected = household2.powerPlantsConnected;
+        return household1;
+      } else {
+        household2.powerPlantsConnected = household1.powerPlantsConnected;
+        return household2;
+      } // return household2
+
+
       throw new Error("Not Implemented");
     }
   }, {
@@ -21271,6 +21280,18 @@ var World = /*#__PURE__*/function () {
       household.powerPlantsConnected = household.powerPlantsConnected.filter(function (el) {
         return el.id != powerPlant.id;
       });
+      deepDisconnect(household.householdsConnected);
+
+      function deepDisconnect(el) {
+        el.map(function (el) {
+          el.powerPlantsConnected = household.powerPlantsConnected;
+
+          if (el.householdsConnected.length) {
+            deepDisconnect(el.householdsConnected);
+          }
+        });
+      }
+
       return household;
       throw new Error("Not Implemented");
     }
@@ -21473,9 +21494,9 @@ describe("Households + Households + Power Plants", function () {
     assert.equal(world.householdHasEletricity(household2), true);
     assert.equal(world.householdHasEletricity(household3), true);
     world.disconnectHouseholdFromPowerPlant(household1, powerPlant);
-    assert.equal(world.householdHasEletricity(household1), false); // --- need to find solution ---
-    // assert.equal(world.householdHasEletricity(household2), false);
-    // assert.equal(world.householdHasEletricity(household3), false);
+    assert.equal(world.householdHasEletricity(household1), false);
+    assert.equal(world.householdHasEletricity(household2), false);
+    assert.equal(world.householdHasEletricity(household3), false);
   });
   it("2 Households + 2 Power Plants", function () {
     var world = new World();
@@ -21489,16 +21510,16 @@ describe("Households + Households + Power Plants", function () {
     assert.equal(world.householdHasEletricity(household2), true);
     world.killPowerPlant(powerPlant1);
     assert.equal(world.householdHasEletricity(household1), false);
+    assert.equal(world.householdHasEletricity(household2), true);
+    console.log(household1); // --- need to find solution ---
+
+    world.connectHouseholdToHousehold(household1, household2);
+    assert.equal(world.householdHasEletricity(household1), true);
     assert.equal(world.householdHasEletricity(household2), true); // --- need to find solution ---
-    // world.connectHouseholdToHousehold(household1, household2);
-    //
-    // assert.equal(world.householdHasEletricity(household1), true);
-    // assert.equal(world.householdHasEletricity(household2), true);
-    //
-    // world.disconnectHouseholdFromPowerPlant(household2, powerPlant2);
-    //
-    // assert.equal(world.householdHasEletricity(household1), false);
-    // assert.equal(world.householdHasEletricity(household2), false);
+
+    world.disconnectHouseholdFromPowerPlant(household2, powerPlant2);
+    assert.equal(world.householdHasEletricity(household1), false);
+    assert.equal(world.householdHasEletricity(household2), false);
   });
 });
 window.mocha.run();
