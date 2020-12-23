@@ -46,24 +46,22 @@ class World {
 
     connectHouseholdToPowerPlant(household, powerPlant) {
         household.powerPlantsConnected.push(powerPlant)
-        powerPlant.householdsConnected.push(household)
         household.powerPlantsConnected = household.powerPlantsConnected.filter(el => el.isActive === true)
         return household
         throw new Error("Not Implemented");
     }
 
     connectHouseholdToHousehold(household1, household2) {
-        household1.householdsConnected.push(household2)
-        // console.log(household1)
-        if (household2.powerPlantsConnected.length > 0){
-            household1.powerPlantsConnected = household2.powerPlantsConnected
-            return household1
-        }else {
+        if (household2.powerPlantsConnected.length === 0){
+            household1.householdsConnected.push(household2)
             household2.powerPlantsConnected = household1.powerPlantsConnected
-            return household2
         }
-        // return household2
+        else {
+            household2.householdsConnected.push(household1)
+            household1.powerPlantsConnected = household2.powerPlantsConnected
+        }
 
+        return this
         throw new Error("Not Implemented");
     }
 
@@ -142,7 +140,7 @@ describe("Households + Power Plants", function () {
 
         assert.equal(world.householdHasEletricity(household), true);
     });
-    // //
+
     it("Household won't have Electricity after disconnecting from the only Power Plant", () => {
         const world = new World();
         const household = world.createHousehold();
@@ -268,7 +266,7 @@ describe("Households + Power Plants", function () {
         assert.equal(world.householdHasEletricity(household1), false);
         assert.equal(world.householdHasEletricity(household2), false);
     });
-    //
+
     it("Household + Power Plant, case 1", () => {
         const world = new World();
 
@@ -357,7 +355,6 @@ describe("Households + Households + Power Plants", function () {
         assert.equal(world.householdHasEletricity(household1), false);
         assert.equal(world.householdHasEletricity(household2), true);
 
-        console.log(household1)
         // --- need to find solution ---
         world.connectHouseholdToHousehold(household1, household2);
         assert.equal(world.householdHasEletricity(household1), true);
